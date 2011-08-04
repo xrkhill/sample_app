@@ -51,6 +51,33 @@ describe UsersController do
         response.should have_selector("a", :href => "/users?page=2", :content => "Next")
       end
     end
+
+    describe "for admin users" do
+
+      before(:each) do
+        @user = Factory(:user, :email => "admin@example.com", :admin => true)
+        test_sign_in(@user)
+      end
+
+      it "should display delete links" do
+        get :index
+        #response.should have_selector("a", :href => "users/#{@user.id}", :content => "delete")
+        response.should have_selector("a", :content => "delete")
+      end
+    end
+
+    describe "for normal users" do
+
+      before(:each) do
+        @user = Factory(:user)
+        test_sign_in(@user)
+      end
+
+      it "should not display delete links" do
+        get :index
+        response.should_not have_selector("a", :content => "delete")
+      end
+    end
   end
 
   describe "GET 'show'" do
@@ -260,8 +287,8 @@ describe UsersController do
     describe "as an admin user" do
 
       before(:each) do
-        admin = Factory(:user, :email => "admin@example.com", :admin => true)
-        test_sign_in(admin)
+        @admin = Factory(:user, :email => "admin@example.com", :admin => true)
+        test_sign_in(@admin)
       end
 
       it "should destroy the user" do
@@ -273,6 +300,12 @@ describe UsersController do
       it "should redirect to the users page" do
         delete :destroy, :id => @user
         response.should redirect_to(users_path)
+      end
+
+      it "should not delete itself" do
+        lambda do
+          delete :destroy, :id => @admin
+        end.should_not change(User, :count).by(-1)
       end
     end
   end
